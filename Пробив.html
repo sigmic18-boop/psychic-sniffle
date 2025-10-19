@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>тул для поиска номеров и слов</title>
+<style>
+body {
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(120deg, #1e1e1e, #333);
+    color: #fff;
+    margin: 0;
+    padding: 0;
+}
+header {
+    background: #111;
+    text-align: center;
+    padding: 30px 0;
+    border-bottom: 3px solid #f55;
+}
+header h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #f55;
+}
+header .subtitle {
+    font-size: 16px;
+    color: #aaa;
+}
+header .avatar {
+    font-size: 50px;
+    margin-bottom: 10px;
+}
+.container {
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+}
+input[type=text] {
+    width: 300px;
+    padding: 8px;
+    margin: 5px 0;
+    border: 2px solid #555;
+    border-radius: 5px;
+    background: #222;
+    color: #fff;
+}
+input[type=file] {
+    margin: 10px 0;
+}
+button {
+    margin: 5px;
+    padding: 10px 20px;
+    background: #555;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+button:hover {
+    background: #f55;
+    color: #fff;
+}
+#results {
+    margin-top: 20px;
+    white-space: pre-wrap;
+    background: #222;
+    padding: 10px;
+    border-radius: 5px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="avatar">👁️</div>
+    <h1>тул для поиска номеров и слов</h1>
+    <div class="subtitle">by vredon0s</div>
+</header>
+
+<div class="container">
+    <input type="file" id="files" multiple accept=".txt,.csv"><br>
+    <input type="text" id="searchInput" placeholder="введите номер или слово"><br>
+    <button onclick="searchSpecific()">поиск по номеру</button>
+    <button onclick="searchAllPhones()">поиск всех номеров</button>
+    <button onclick="searchWords()">поиск по словам</button>
+    <div id="results"></div>
+</div>
+
+<script>
+let loadedFiles = [];
+
+document.getElementById('files').addEventListener('change', (e) => {
+    loadedFiles = [];
+    for (let file of e.target.files) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            loadedFiles.push({name: file.name, content: event.target.result});
+        };
+        reader.readAsText(file, 'utf-8');
+    }
+});
+
+function searchSpecific() {
+    const query = document.getElementById('searchInput').value.replace(/\D/g,'');
+    const results = [];
+    for (let f of loadedFiles) {
+        let foundLines = [];
+        for (let i=0;i<2;i++){
+            let lines = f.content.split(/\r?\n/);
+            for (let line of lines) {
+                if(line.replace(/\D/g,'').includes(query)){
+                    foundLines.push(line);
+                }
+            }
+            if(i==0) foundLines.unshift("первая база данных прочищена");
+        }
+        if(foundLines.length>1) results.push(f.name + ":\n" + foundLines.join("\n"));
+    }
+    document.getElementById('results').innerText = results.join("\n\n") || "ничего не найдено";
+}
+
+function searchAllPhones() {
+    const phoneRegex = /(\+7|8)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}/g;
+    const allPhones = new Set();
+    const results = [];
+    for (let f of loadedFiles) {
+        let foundLines = [];
+        for(let i=0;i<2;i++){
+            let lines = f.content.split(/\r?\n/);
+            for (let line of lines){
+                let matches = line.match(phoneRegex);
+                if(matches){
+                    matches.forEach(m=>allPhones.add(m));
+                    foundLines.push(line);
+                }
+            }
+            if(i==0) foundLines.unshift("первая база данных прочищена");
+        }
+        if(foundLines.length>1) results.push(f.name + ":\n" + foundLines.join("\n"));
+    }
+    if(allPhones.size>0){
+        results.push("все уникальные номера: " + Array.from(allPhones).join(", "));
+    }
+    document.getElementById('results').innerText = results.join("\n\n") || "ничего не найдено";
+}
+
+function searchWords() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const results = [];
+    for (let f of loadedFiles) {
+        let foundLines = [];
+        for(let i=0;i<2;i++){
+            let lines = f.content.split(/\r?\n/);
+            for (let line of lines){
+                if(line.toLowerCase().includes(query)){
+                    foundLines.push(line);
+                }
+            }
+            if(i==0) foundLines.unshift("первая база данных прочищена");
+        }
+        if(foundLines.length>1) results.push(f.name + ":\n" + foundLines.join("\n"));
+    }
+    document.getElementById('results').innerText = results.join("\n\n") || "ничего не найдено";
+}
+</script>
+
+</body>
+</html>
